@@ -1,40 +1,13 @@
 import { useState, useEffect } from "react";
-import { PDFDocument } from "pdf-lib"; // Import pdf-lib
-import signatureImage from "@/assets/R.png"; // Assuming the image is in the project directory
-import { useDropzone } from "react-dropzone"; // Import react-dropzone
+import { PDFDocument } from "pdf-lib"; 
+import signatureImage from "@/assets/R.png"; 
+import { useDropzone } from "react-dropzone"; 
 import { List, ListItem, ListItemText, Paper, IconButton, Typography } from "@mui/material";
-import { Delete as DeleteIcon, Download as DownloadIcon } from "@mui/icons-material"; // MUI icons
+import { Delete as DeleteIcon, Download as DownloadIcon } from "@mui/icons-material"; 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { toast } from 'react-toastify'; // Import react-toastify
+import { toast } from 'react-toastify';
 
 const Signature = () => {
-  useEffect(() => {
-    const handleKeyDown = (event: any) => {
-      if (event.key === "F12" || (event.ctrlKey && event.shiftKey && event.key === "I")) {
-        event.preventDefault(); // Disable F12 or Ctrl+Shift+I
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    // Disable right-click functionality
-    const handleContextMenu = (event: any) => {
-      event.preventDefault(); // Prevents the right-click context menu
-    };
-
-    document.addEventListener("contextmenu", handleContextMenu);
-
-    return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
-    };
-  }, []);
-
   const [signedFiles, setSignedFiles] = useState<{ name: string; blob: Blob }[]>([]);
 
   const formatTimestamp = () => {
@@ -60,7 +33,7 @@ const Signature = () => {
         const uint8Array = new Uint8Array(event.target?.result as ArrayBuffer);
         const pdfDoc = await PDFDocument.load(uint8Array);
 
-        const imageBytes = await fetch(signatureImage).then(res => res.arrayBuffer()); // Load image from your project directory
+        const imageBytes = await fetch(signatureImage).then(res => res.arrayBuffer()); 
         const signatureImageEmbed = await pdfDoc.embedPng(imageBytes);
 
         const { width, height } = signatureImageEmbed.scale(0.01);
@@ -99,7 +72,7 @@ const Signature = () => {
         setSignedFiles((prev) => [...prev, { name: file.name, blob: processedFiles[processedFiles.length - 1].blob }]);
 
         downloadFile(processedFiles[processedFiles.length - 1]);
-        toast.success(`Signed file saved: ${file.name}`); // Show success toaster
+        toast.success(`Signed file saved: ${file.name}`);
       };
 
       reader.readAsArrayBuffer(file);
@@ -120,6 +93,35 @@ const Signature = () => {
     multiple: true,
   });
 
+  useEffect(() => {
+    let logoutTimer: NodeJS.Timeout;
+  
+    const resetTimer = () => {
+      console.log("Activity detected, resetting timer");
+      if (logoutTimer) clearTimeout(logoutTimer);
+      logoutTimer = setTimeout(() => {
+        console.log("Inactivity detected, logging out...");
+        alert("You have been logged out due to inactivity.");
+        window.location.href = "/"; // Redirect to login page or handle logout
+      }, 1 * 60 * 1000); // 1 minute timeout
+    };
+  
+    const events = ['mousemove', 'keydown', 'click'];
+  
+    events.forEach(event => {
+      document.addEventListener(event, resetTimer);
+    });
+  
+    resetTimer(); // Start the timer immediately on mount
+  
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, resetTimer);
+      });
+      if (logoutTimer) clearTimeout(logoutTimer);
+    };
+  }, []);
+  
   return (
     <div className="p-6 max-w-xl mx-auto">
       <Typography variant="h4" align="center" gutterBottom>
