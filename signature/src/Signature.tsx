@@ -9,7 +9,45 @@ import { toast } from 'react-toastify';
 
 const Signature = () => {
   const [signedFiles, setSignedFiles] = useState<{ name: string; blob: Blob }[]>([]);
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+Shift+C, Ctrl+P
+      if (
+        event.key === "F12" ||
+        (event.ctrlKey && event.shiftKey && ["I", "J", "C"].includes(event.key)) ||
+        (event.ctrlKey && ["U", "P"].includes(event.key))
+      ) {
+        event.preventDefault(); // Disable the key combination
+      }
+    };
 
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault(); // Prevent right-click
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Optional: Warn user before they try to leave or refresh the page
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    // Disable dragging elements to inspect or open them externally
+    const handleDragStart = (event: DragEvent) => {
+      event.preventDefault();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("dragstart", handleDragStart);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("dragstart", handleDragStart);
+    };
+  }, []);
   const formatTimestamp = () => {
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = {
@@ -20,9 +58,10 @@ const Signature = () => {
       minute: "2-digit",
       hour12: true,
     };
-    return now.toLocaleString("en-US", options).replace(",", "").replace(" ", "-").replace(":", "");
+    // Format the date and time as "Month Day, Year Hour:Minute AM/PM"
+    return now.toLocaleString("en-US", options).replace(",", "").replace(" ", "-");
   };
-
+  
   const handleFileChange = async (acceptedFiles: File[]) => {
     const processedFiles: { name: string; blob: Blob }[] = [];
 
@@ -80,7 +119,7 @@ const Signature = () => {
   };
 
   const downloadFile = (file: { name: string; blob: Blob }) => {
-    const timestamp = formatTimestamp();
+    const timestamp = formatTimestamp(); 
     const link = document.createElement("a");
     link.href = URL.createObjectURL(file.blob);
     link.download = `Signed-${file.name.replace(".pdf", "")}_${timestamp}.pdf`;
