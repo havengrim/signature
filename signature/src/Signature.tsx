@@ -6,8 +6,16 @@ import { List, ListItem, ListItemText, Paper, IconButton, Typography } from "@mu
 import { Delete as DeleteIcon, Download as DownloadIcon } from "@mui/icons-material"; 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { toast } from 'react-toastify';
+import Button from '@mui/material/Button';
+import { useNavigate } from 'react-router-dom';
 
 const Signature = () => {
+  const navigate = useNavigate();
+
+  const handleNavigation = () => {
+    navigate('/signature');
+  };
+  
   const [signedFiles, setSignedFiles] = useState<{ name: string; blob: Blob }[]>([]);
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -75,29 +83,64 @@ const Signature = () => {
         const imageBytes = await fetch(signatureImage).then(res => res.arrayBuffer()); 
         const signatureImageEmbed = await pdfDoc.embedPng(imageBytes);
 
-        const { width, height } = signatureImageEmbed.scale(0.01);
+        const { width, height } = signatureImageEmbed.scale(0.005);
 
         const pages = pdfDoc.getPages();
 
         pages.forEach((page, index) => {
+          const signerName = "Morales\nJennifer\nCampang"; // Replace with actual signer details
+        
+          // Get the current timestamp
+          const now = new Date();
+          const formattedDate = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+          const formattedTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")} +08'00'`;
+        
+          const text = `Digitally signed\nby ${signerName}\nDate: ${formattedDate}\n${formattedTime}`; // Add time on a new line
+        
           if (index === 0) {
-            const signaturePositionPage1 = { x: 60, y: 220 };
+            // First page signature position
+            const signaturePositionPage1 = { x: 112, y: 220 };
+            const textPositionPage1 = { x: 140, y: 235 };
+        
+            // Draw signature image on the first page
             page.drawImage(signatureImageEmbed, {
               x: signaturePositionPage1.x,
               y: signaturePositionPage1.y,
               width: width,
               height: height,
             });
+        
+            // Add "Digitally signed" text with name, date, and time
+            page.drawText(text, {
+              x: textPositionPage1.x,
+              y: textPositionPage1.y,
+              size: 4, // Font size
+              lineHeight: 4, // Line height between lines
+            });
           } else if (index === 1) {
-            const signaturePositionPage2 = { x: 390, y: 175 };
+            // Second page signature position
+            const signaturePositionPage2 = { x: 430, y: 190};
+            const textPositionPage2 = { x: 460, y: 200 };
+        
+            // Draw signature image on the second page
             page.drawImage(signatureImageEmbed, {
               x: signaturePositionPage2.x,
               y: signaturePositionPage2.y,
               width: width,
               height: height,
             });
+        
+            // Add "Digitally signed" text with name, date, and time
+            page.drawText(text, {
+              x: textPositionPage2.x,
+              y: textPositionPage2.y,
+              size: 4, // Font size
+              lineHeight: 4, // Line height between lines
+            });
           }
         });
+        
+        
 
         const pdfBytes = await pdfDoc.save();
 
@@ -166,6 +209,13 @@ const Signature = () => {
       <Typography variant="h4" align="center" gutterBottom>
         Auto Sign PDF Files
       </Typography>
+
+      <div className="grid gap-2 grid-cols-4 mb-2">
+        <Button variant="contained" size="medium" sx={{ borderRadius: '9999px' }} onClick={handleNavigation}>RAI</Button>
+        <Button variant="contained" size="medium" sx={{ borderRadius: '9999px' }} >Category</Button>
+        <Button variant="contained" size="medium" sx={{ borderRadius: '9999px' }}>Category</Button>
+        <Button variant="contained" size="medium" sx={{ borderRadius: '9999px' }}>Category</Button>
+      </div>
 
       <Paper {...getRootProps()} elevation={1} sx={{ p: 4, borderRadius: 2, textAlign: "center", cursor: "pointer", "&:hover": { backgroundColor: "#f5f5f5" } }}>
         <input {...getInputProps()} />
